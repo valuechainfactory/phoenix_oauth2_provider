@@ -2,14 +2,17 @@ defmodule PhoenixOauth2Provider.AuthorizationController do
   @moduledoc false
   use PhoenixOauth2Provider.Controller
 
-  alias ExOauth2Provider.Authorization
   alias Plug.Conn
+  alias ExOauth2Provider.Authorization
 
   @spec new(Conn.t(), map(), map(), keyword()) :: Conn.t()
   def new(conn, params, resource_owner, config) do
     resource_owner
     |> Authorization.preauthorize(params, config)
     |> case do
+      {:ok, %{internal: true} = _client, _scopes} ->
+        create(conn, params, resource_owner, config)
+
       {:ok, client, scopes} ->
         render(conn, "new.html", params: params, client: client, scopes: scopes)
 
@@ -48,9 +51,11 @@ defmodule PhoenixOauth2Provider.AuthorizationController do
   defp redirect_or_render({:redirect, redirect_uri}, conn) do
     redirect(conn, external: redirect_uri)
   end
+
   defp redirect_or_render({:native_redirect, payload}, conn) do
     json(conn, payload)
   end
+
   defp redirect_or_render({:error, error, status}, conn) do
     conn
     |> put_status(status)
