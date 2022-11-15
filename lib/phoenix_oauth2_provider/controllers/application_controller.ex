@@ -46,6 +46,7 @@ defmodule PhoenixOauth2Provider.ApplicationController do
 
   @spec show(Conn.t(), map(), map(), keyword()) :: Conn.t()
   def show(conn, %{"uid" => uid}, resource_owner, config) do
+    # Verify resource owner has access
     application = get_application_for!(resource_owner, uid, config)
 
     render(conn, "show.html", application: application)
