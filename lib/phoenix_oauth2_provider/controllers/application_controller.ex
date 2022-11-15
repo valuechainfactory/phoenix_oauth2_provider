@@ -11,7 +11,7 @@ defmodule PhoenixOauth2Provider.ApplicationController do
   @spec index(Conn.t(), map(), map(), keyword()) :: Conn.t()
   def index(conn, _params, resource_owner, config) do
     applications = Applications.get_applications_for(resource_owner, config)
-    internal_applications = Applications.get_admin_applications(config)
+    internal_applications = Applications.get_internal_applications(config)
 
     render(conn, "index.html",
       applications: applications,
