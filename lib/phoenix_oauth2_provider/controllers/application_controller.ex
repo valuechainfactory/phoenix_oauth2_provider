@@ -2,16 +2,21 @@ defmodule PhoenixOauth2Provider.ApplicationController do
   @moduledoc false
   use PhoenixOauth2Provider.Controller
 
+  alias Hex.Application
   alias ExOauth2Provider.Applications
   alias Plug.Conn
 
-  plug :assign_native_redirect_uri when action in [:new, :create, :edit, :update]
+  plug(:assign_native_redirect_uri when action in [:new, :create, :edit, :update])
 
   @spec index(Conn.t(), map(), map(), keyword()) :: Conn.t()
   def index(conn, _params, resource_owner, config) do
     applications = Applications.get_applications_for(resource_owner, config)
+    internal_applications = Applications.get_admin_applications(config)
 
-    render(conn, "index.html", applications: applications)
+    render(conn, "index.html",
+      applications: applications,
+      internal_applications: internal_applications
+    )
   end
 
   @spec new(Conn.t(), map(), map(), keyword()) :: Conn.t()
@@ -49,13 +54,18 @@ defmodule PhoenixOauth2Provider.ApplicationController do
   @spec edit(Conn.t(), map(), map(), keyword()) :: Conn.t()
   def edit(conn, %{"uid" => uid}, resource_owner, config) do
     application = get_application_for!(resource_owner, uid, config)
-    changeset   = Applications.change_application(application, %{}, config)
+    changeset = Applications.change_application(application, %{}, config)
 
     render(conn, "edit.html", changeset: changeset)
   end
 
   @spec update(Conn.t(), map(), map(), keyword()) :: Conn.t()
-  def update(conn, %{"uid" => uid, "oauth_application" => application_params}, resource_owner, config) do
+  def update(
+        conn,
+        %{"uid" => uid, "oauth_application" => application_params},
+        resource_owner,
+        config
+      ) do
     application = get_application_for!(resource_owner, uid, config)
 
     case Applications.update_application(application, application_params, config) do
@@ -86,7 +96,8 @@ defmodule PhoenixOauth2Provider.ApplicationController do
   end
 
   defp assign_native_redirect_uri(conn, _opts) do
-    native_redirect_uri = ExOauth2Provider.Config.native_redirect_uri(conn.private[:phoenix_oauth2_provider_config])
+    native_redirect_uri =
+      ExOauth2Provider.Config.native_redirect_uri(conn.private[:phoenix_oauth2_provider_config])
 
     Conn.assign(conn, :native_redirect_uri, native_redirect_uri)
   end
